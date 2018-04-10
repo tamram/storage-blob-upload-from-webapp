@@ -107,7 +107,7 @@ namespace ImageResizeWebApp.Controllers
                 List<string> thumbnailUrls = await StorageHelper.GetThumbNailUrls(storageConfig);
 
                 return new ObjectResult(thumbnailUrls);
-            
+
             }
             catch (Exception ex)
             {

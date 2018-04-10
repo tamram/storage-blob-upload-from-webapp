@@ -50,6 +50,7 @@ namespace ImageResizeWebApp.Helpers
             return await Task.FromResult(true);
         }
 
+
         public static async Task<List<string>> GetThumbNailUrls(AzureStorageConfig _storageConfig)
         {
             List<string> thumbnailUrls = new List<string>();
@@ -83,7 +84,24 @@ namespace ImageResizeWebApp.Helpers
 
                 foreach (var blobItem in resultSegment.Results)
                 {
-                    thumbnailUrls.Add(blobItem.StorageUri.PrimaryUri.ToString());
+                    CloudBlockBlob blob = blobItem as CloudBlockBlob;
+                    //Set the expiry time and permissions for the blob.
+                    //In this case, the start time is specified as a few minutes in the past, to mitigate clock skew.
+                    //The shared access signature will be valid immediately.
+                    SharedAccessBlobPolicy sasConstraints = new SharedAccessBlobPolicy();
+
+                    sasConstraints.SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5);
+
+                    sasConstraints.SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddHours(24);
+
+                    sasConstraints.Permissions = SharedAccessBlobPermissions.Read;
+
+                    //Generate the shared access signature on the blob, setting the constraints directly on the signature.
+                    string sasBlobToken = blob.GetSharedAccessSignature(sasConstraints);
+
+                    //Return the URI string for the container, including the SAS token.
+                    thumbnailUrls.Add(blob.Uri + sasBlobToken);
+
                 }
 
                 //Get the continuation token.
